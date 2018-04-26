@@ -33,6 +33,8 @@ const assetChainPorts = {
   'BTCH': '8800',
   'BNTN': '14358',
   'EQL': '10306',
+  'MINING': '777', // change
+  'STAKING': '777', // change
 };
 
 module.exports = assetChainPorts;
