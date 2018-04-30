@@ -11,7 +11,6 @@ shepherd._fs = require('graceful-fs');
 shepherd.md5 = require('./md5.js');
 shepherd.request = require('request');
 shepherd.portscanner = require('portscanner');
-shepherd.aes256 = require('nodejs-aes256');
 shepherd.AdmZip = require('adm-zip');
 shepherd.remoteFileSize = require('remote-file-size');
 shepherd.Promise = require('bluebird');

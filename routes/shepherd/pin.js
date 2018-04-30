@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const aes256 = require('nodejs-aes256');
+const {encrypt, decrypt} = require('./../encryption');
 const passwdStrength = require('passwd-strength');
 const bitcoin = require('bitcoinjs-lib');
 const sha256 = require('js-sha256');
@@ -10,7 +10,7 @@ module.exports = (shepherd) => {
    *  type: POST
    *  params: none
    */
-  shepherd.post('/encryptkey', (req, res, next) => {
+  shepherd.post('/encryptkey', async (req, res, next) => {
     if (shepherd.checkToken(req.body.token)) {
       if (req.body.key &&
           req.body.string) {
@@ -42,7 +42,7 @@ module.exports = (shepherd) => {
           const _customPinFilenameTest = /^[0-9a-zA-Z-_]+$/g;
 
           if (_customPinFilenameTest.test(pubkey)) {
-            const encryptedString = aes256.encrypt(req.body.key, req.body.string);
+            const encryptedString = await encrypt(req.body.string, req.body.key);
 
             fs.writeFile(`${shepherd.agamaDir}/shepherd/pin/${pubkey}.pin`, encryptedString, (err) => {
               if (err) {
@@ -107,7 +107,7 @@ module.exports = (shepherd) => {
       if (req.body.key &&
           req.body.pubkey) {
         if (fs.existsSync(`${shepherd.agamaDir}/shepherd/pin/${req.body.pubkey}.pin`)) {
-          fs.readFile(`${shepherd.agamaDir}/shepherd/pin/${req.body.pubkey}.pin`, 'utf8', (err, data) => {
+          fs.readFile(`${shepherd.agamaDir}/shepherd/pin/${req.body.pubkey}.pin`, 'utf8', async (err, data) => {
             if (err) {
               const errorObj = {
                 msg: 'error',
@@ -116,21 +116,18 @@ module.exports = (shepherd) => {
 
               res.end(JSON.stringify(errorObj));
             } else {
-              const encryptedKey = aes256.decrypt(req.body.key, data);
-              // test if stored encrypted passphrase is decrypted correctly
-              // if not then the key is wrong
-              const _regexTest = encryptedKey.match(/^[0-9a-zA-Z ]+$/g);
-              let returnObj;
 
-              if (!_regexTest) {
+              let returnObj;
+              try {
+                const decryptedKey = await decrypt(data, req.body.key);
+                returnObj = {
+                  msg: 'success',
+                  result: decryptedKey,
+                };
+              } catch (error) {
                 returnObj = {
                   msg: 'error',
                   result: 'wrong key',
-                };
-              } else {
-                returnObj = {
-                  msg: 'success',
-                  result: encryptedKey,
                 };
               }
 
